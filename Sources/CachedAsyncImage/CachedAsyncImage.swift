@@ -77,6 +77,7 @@ public struct CachedAsyncImage<Content>: View where Content: View {
     private let transaction: Transaction
     
     private let content: (AsyncImagePhase) -> Content
+    private let uiImageContent: (AsyncUIImagePhase) -> Content
     
     public var body: some View {
         content(phase)
@@ -307,6 +308,7 @@ public struct CachedAsyncImage<Content>: View where Content: View {
         self.scale = scale
         self.transaction = transaction
         self.content = content
+        self.uiImageContent = EmptyView()
         
         self._phase = State(wrappedValue: .empty)
         do {
@@ -325,7 +327,7 @@ public struct CachedAsyncImage<Content>: View where Content: View {
         self.urlSession =  URLSession(configuration: configuration)
         self.scale = scale
         self.transaction = transaction
-        self.content = content
+        self.uiImageContent = content
         
         self._uiImagePhase = State(wrappedValue: .empty)
         do {

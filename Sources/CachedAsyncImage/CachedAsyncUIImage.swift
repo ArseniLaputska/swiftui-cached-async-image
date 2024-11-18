@@ -89,6 +89,24 @@ public struct CachedAsyncUIImage<Content>: View where Content: View {
     
     @Sendable
     private func load() async {
+        
+        if #available(iOS 16.0, *) {
+            if let url = urlRequest?.url, url.scheme == "file" {
+                if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                    phase = .success(image)
+                    return
+                }
+            }
+            
+            if let url = urlRequest?.url, url.scheme == "base64" {
+                let base64String = String(url.absoluteString.trimmingPrefix("base64://"))
+                if let data = Data(base64Encoded: base64String), let image = UIImage(data: data) {
+                    phase = .success(image)
+                    return
+                }
+            }
+        }
+        
         do {
             if let urlRequest = urlRequest {
                 let (image, metrics) = try await remoteImage(from: urlRequest, session: urlSession)

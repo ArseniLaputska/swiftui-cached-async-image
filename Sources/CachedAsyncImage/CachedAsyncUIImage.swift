@@ -100,14 +100,14 @@ public struct CachedAsyncUIImage<Content>: View where Content: View {
     
     private func loadLocally() {
         if #available(iOS 16.0, *) {
-            if let url = urlRequest?.url, url.scheme == "file" {
+            if let url, url.scheme == "file" {
                 if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
                     phase = .success(image)
                     return
                 }
             }
             
-            if let url = urlRequest?.url, url.scheme == "base64" {
+            if let url, url.scheme == "base64" {
                 let base64String = String(url.absoluteString.trimmingPrefix("base64://"))
                 if let data = Data(base64Encoded: base64String), let image = UIImage(data: data) {
                     phase = .success(image)

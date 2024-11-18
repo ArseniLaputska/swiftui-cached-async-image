@@ -66,7 +66,6 @@ import SwiftUI
 public struct CachedAsyncImage<Content>: View where Content: View {
     
     @State private var phase: AsyncImagePhase
-    @State private var uiImagePhase: AsyncUIImagePhase = .empty
     
     private let urlRequest: URLRequest?
     
@@ -76,8 +75,7 @@ public struct CachedAsyncImage<Content>: View where Content: View {
     
     private let transaction: Transaction
     
-    private var content: ((AsyncImagePhase) -> Content) = nil
-    private var uiImageContent: ((AsyncUIImagePhase) -> Content)? = nil
+    private var content: (AsyncImagePhase) -> Content
     
     public var body: some View {
         content(phase)
@@ -259,11 +257,6 @@ public struct CachedAsyncImage<Content>: View where Content: View {
         let urlRequest = url == nil ? nil : URLRequest(url: url!)
         self.init(urlRequest: urlRequest, urlCache: urlCache, scale: scale, transaction: transaction, content: content)
     }
-
-    public init(url: URL?, urlCache: URLCache = .shared, scale: CGFloat = 1, transaction: Transaction = Transaction(), @ViewBuilder uIImageContent: @escaping (AsyncUIImagePhase) -> Content) {
-        let urlRequest = url == nil ? nil : URLRequest(url: url!)
-        self.init(urlRequest: urlRequest, urlCache: urlCache, scale: scale, transaction: transaction, uIImageContent: uIImageContent)
-    }
     
     /// Loads and displays a modifiable image from the specified URL in phases.
     ///
@@ -318,26 +311,6 @@ public struct CachedAsyncImage<Content>: View where Content: View {
             self._phase = State(wrappedValue: .failure(error))
         }
     }
-
-    public init(urlRequest: URLRequest?, urlCache: URLCache = .shared, scale: CGFloat = 1, transaction: Transaction = Transaction(), @ViewBuilder uIImageContent: @escaping (AsyncUIImagePhase) -> Content) {
-        let configuration = URLSessionConfiguration.default
-        configuration.urlCache = urlCache
-        self.urlRequest = urlRequest
-        self.urlSession =  URLSession(configuration: configuration)
-        self.scale = scale
-        self.transaction = transaction
-        self.uiImageContent = uIImageContent
-        
-        self._phase = State(wrappedValue: .empty)
-        self._uiImagePhase = State(wrappedValue: .empty)
-        do {
-            if let urlRequest = urlRequest, let image = try cachedUIImage(from: urlRequest, cache: urlCache) {
-                self._uiImagePhase = State(wrappedValue: .success(image))
-            }
-        } catch {
-            self._uiImagePhase = State(wrappedValue: .failure(error))
-        }
-    }
     
     @Sendable
     private func load() async {
@@ -374,7 +347,7 @@ public enum AsyncUIImagePhase {
 // MARK: - LoadingError
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-private extension AsyncImage {
+public extension AsyncImage {
     struct LoadingError: Error {
     }
 }
@@ -439,17 +412,17 @@ private extension CachedAsyncImage {
 
 // MARK: - AsyncImageURLSession
 
-private class URLSessionTaskController: NSObject, URLSessionTaskDelegate {
+public class URLSessionTaskController: NSObject, URLSessionTaskDelegate {
     
     var metrics: URLSessionTaskMetrics?
     
-    func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+    public func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
         self.metrics = metrics
     }
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-private extension URLSession {
+public extension URLSession {
     
     func data(for request: URLRequest) async throws -> (Data, URLResponse, URLSessionTaskMetrics) {
         let controller = URLSessionTaskController()

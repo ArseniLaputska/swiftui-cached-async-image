@@ -308,7 +308,9 @@ public struct CachedAsyncImage<Content>: View where Content: View {
         self.scale = scale
         self.transaction = transaction
         self.content = content
-        self.uiImageContent = { .empty in return EmptyView() )
+        self.uiImageContent = ({ _ in
+            return EmptyView.init() as! Content
+        })
         
         self._phase = State(wrappedValue: .empty)
         do {
@@ -328,7 +330,11 @@ public struct CachedAsyncImage<Content>: View where Content: View {
         self.scale = scale
         self.transaction = transaction
         self.uiImageContent = uIImageContent
+        self.content = ({ _ in
+            return EmptyView.init() as! Content
+        })
         
+        self._phase = State(wrappedValue: .empty)
         self._uiImagePhase = State(wrappedValue: .empty)
         do {
             if let urlRequest = urlRequest, let image = try cachedUIImage(from: urlRequest, cache: urlCache) {
@@ -366,7 +372,8 @@ public struct CachedAsyncImage<Content>: View where Content: View {
 }
 
 // MARK: - AsyncUIImagePhase
-enum AsyncUIImagePhase {
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+public enum AsyncUIImagePhase {
     case empty, success(UIImage), failure(Error)
 }
 

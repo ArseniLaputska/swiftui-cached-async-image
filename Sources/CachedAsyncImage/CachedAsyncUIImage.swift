@@ -13,6 +13,7 @@ public struct CachedAsyncUIImage<Content>: View where Content: View {
     @State private var phase: AsyncUIImagePhase = .empty
     
     private let urlRequest: URLRequest?
+    private let url: URL?
     
     private let urlSession: URLSession
     
@@ -72,6 +73,7 @@ public struct CachedAsyncUIImage<Content>: View where Content: View {
         let configuration = URLSessionConfiguration.default
         configuration.urlCache = urlCache
         self.urlRequest = urlRequest
+        self.url = urlRequest?.url
         self.urlSession =  URLSession(configuration: configuration)
         self.scale = scale
         self.transaction = transaction
@@ -79,17 +81,24 @@ public struct CachedAsyncUIImage<Content>: View where Content: View {
         
         self._phase = State(wrappedValue: .empty)
         do {
-            if let urlRequest = urlRequest, let image = try cachedImage(from: urlRequest, cache: urlCache) {
-                self._phase = State(wrappedValue: .success(image))
+            if isLocal {
+                loadLocally()
+            } else {
+                if let urlRequest = urlRequest, let image = try cachedImage(from: urlRequest, cache: urlCache) {
+                    self._phase = State(wrappedValue: .success(image))
+                }
             }
         } catch {
             self._phase = State(wrappedValue: .failure(error))
         }
     }
     
-    @Sendable
-    private func load() async {
-        
+    private var isLocal: Bool {
+        guard let url else { return false }
+        return url.scheme == "file" || url.scheme == "base64"
+    }
+    
+    private func loadLocally() {
         if #available(iOS 16.0, *) {
             if let url = urlRequest?.url, url.scheme == "file" {
                 if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
@@ -106,7 +115,10 @@ public struct CachedAsyncUIImage<Content>: View where Content: View {
                 }
             }
         }
-        
+    }
+    
+    @Sendable
+    private func load() async {
         do {
             if let urlRequest = urlRequest {
                 let (image, metrics) = try await remoteImage(from: urlRequest, session: urlSession)

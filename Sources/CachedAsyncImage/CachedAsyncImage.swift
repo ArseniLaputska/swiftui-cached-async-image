@@ -260,9 +260,9 @@ public struct CachedAsyncImage<Content>: View where Content: View {
         self.init(urlRequest: urlRequest, urlCache: urlCache, scale: scale, transaction: transaction, content: content)
     }
 
-    public init(url: URL?, urlCache: URLCache = .shared, scale: CGFloat = 1, transaction: Transaction = Transaction(), @ViewBuilder content: @escaping (AsyncUIImagePhase) -> Content) {
+    public init(url: URL?, urlCache: URLCache = .shared, scale: CGFloat = 1, transaction: Transaction = Transaction(), @ViewBuilder uIImageContent: @escaping (AsyncUIImagePhase) -> Content) {
         let urlRequest = url == nil ? nil : URLRequest(url: url!)
-        self.init(urlRequest: urlRequest, urlCache: urlCache, scale: scale, transaction: transaction, content: content)
+        self.init(urlRequest: urlRequest, urlCache: urlCache, scale: scale, transaction: transaction, uIImageContent: uIImageContent)
     }
     
     /// Loads and displays a modifiable image from the specified URL in phases.
@@ -308,7 +308,7 @@ public struct CachedAsyncImage<Content>: View where Content: View {
         self.scale = scale
         self.transaction = transaction
         self.content = content
-        self.uiImageContent = EmptyView()
+        self.uiImageContent = { .empty in return EmptyView() )
         
         self._phase = State(wrappedValue: .empty)
         do {
@@ -320,14 +320,14 @@ public struct CachedAsyncImage<Content>: View where Content: View {
         }
     }
 
-    public init(urlRequest: URLRequest?, urlCache: URLCache = .shared, scale: CGFloat = 1, transaction: Transaction = Transaction(), @ViewBuilder content: @escaping (AsyncUIImagePhase) -> Content) {
+    public init(urlRequest: URLRequest?, urlCache: URLCache = .shared, scale: CGFloat = 1, transaction: Transaction = Transaction(), @ViewBuilder uIImageContent: @escaping (AsyncUIImagePhase) -> Content) {
         let configuration = URLSessionConfiguration.default
         configuration.urlCache = urlCache
         self.urlRequest = urlRequest
         self.urlSession =  URLSession(configuration: configuration)
         self.scale = scale
         self.transaction = transaction
-        self.uiImageContent = content
+        self.uiImageContent = uIImageContent
         
         self._uiImagePhase = State(wrappedValue: .empty)
         do {

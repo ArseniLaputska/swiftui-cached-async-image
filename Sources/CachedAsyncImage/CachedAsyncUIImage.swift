@@ -119,6 +119,7 @@ public struct CachedAsyncUIImage<Content>: View where Content: View {
     
     @Sendable
     private func load() async {
+        guard !isLocal else { return }
         do {
             if let urlRequest = urlRequest {
                 let (image, metrics) = try await remoteImage(from: urlRequest, session: urlSession)

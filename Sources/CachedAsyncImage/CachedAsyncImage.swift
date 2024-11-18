@@ -363,14 +363,15 @@ public struct CachedAsyncImage<Content>: View where Content: View {
     }
 }
 
+// MARK: - AsyncUIImagePhase
+enum AsyncUIImagePhase {
+    case empty, success(UIImage), failure(Error)
+}
+
 // MARK: - LoadingError
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 private extension AsyncImage {
-    enum AsyncUIImagePhase {
-        case empty, success(UIImage), failure(Error)
-    }
-    
     struct LoadingError: Error {
     }
 }

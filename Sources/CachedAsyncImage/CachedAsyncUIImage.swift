@@ -10,7 +10,7 @@ import SwiftUI
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 public struct CachedAsyncUIImage<Content>: View where Content: View {
     
-    @State private var phase: AsyncUIImagePhase = .empty
+    @State private var phase: AsyncUIImagePhase
     
     private let urlRequest: URLRequest?
     private let url: URL?
@@ -82,7 +82,9 @@ public struct CachedAsyncUIImage<Content>: View where Content: View {
         self._phase = State(wrappedValue: .empty)
         do {
             if isLocal {
-                loadLocally()
+                if let image = try loadImageLocally() {
+                    self._phase = State(wrappedValue: .success(image))
+                }
             } else {
                 if let urlRequest = urlRequest, let image = try cachedImage(from: urlRequest, cache: urlCache) {
                     self._phase = State(wrappedValue: .success(image))
@@ -98,23 +100,24 @@ public struct CachedAsyncUIImage<Content>: View where Content: View {
         return url.scheme == "file" || url.scheme == "base64"
     }
     
-    private func loadLocally() {
+    private func loadImageLocally() throws -> UIImage? {
         if #available(iOS 16.0, *) {
             if let url, url.scheme == "file" {
-                if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                    phase = .success(image)
-                    return
+                let data = try Data(contentsOf: url)
+                if let image = UIImage(data: data) {
+                    return image
                 }
             }
             
             if let url, url.scheme == "base64" {
                 let base64String = String(url.absoluteString.trimmingPrefix("base64://"))
-                if let data = Data(base64Encoded: base64String), let image = UIImage(data: data) {
-                    phase = .success(image)
-                    return
+                if let data = Data(base64Encoded: base64String),
+                   let image = UIImage(data: data) {
+                    return image
                 }
             }
         }
+        return nil
     }
     
     @Sendable
